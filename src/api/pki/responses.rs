@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-
 /// Response from executing
 /// [GenerateCertificateRequest][crate::api::pki::requests::GenerateCertificateRequest]
 #[derive(Deserialize, Debug, Serialize)]
@@ -176,4 +175,11 @@ pub struct Issuer {
     pub is_default: bool,
     pub key_id: Option<String>,
     pub serial_number: String,
+}
+
+/// Response from executing
+/// [ReadCrlResponse][crate::api::kv2::requests::ReadIssuerCrl]
+#[derive(Deserialize, Debug, Serialize)]
+pub struct ReadIssuerCrlResponse {
+    pub crl: Option<String>,
 }

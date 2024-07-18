@@ -409,17 +409,36 @@ pub mod role {
 }
 pub mod issuer {
     use crate::api;
-    use crate::api::pki::{
-        requests::ListIssuersRequest,
-        responses::ListIssuersResponse,
-    };
+    use crate::api::pki::{requests::ListIssuersRequest, responses::ListIssuersResponse};
     use crate::client::Client;
     use crate::error::ClientError;
     /// Lists all roles
     ///
     /// See [ListIssuersRequest]
-    pub async fn list(client: &impl Client, mount: &str) -> Result<ListIssuersResponse, ClientError> {
+    pub async fn list(
+        client: &impl Client,
+        mount: &str,
+    ) -> Result<ListIssuersResponse, ClientError> {
         let endpoint = ListIssuersRequest::builder().mount(mount).build().unwrap();
         api::exec_with_result(client, endpoint).await
+    }
+    pub mod crl {
+        use crate::api;
+        use crate::api::pki::{requests::ReadIssuerCrlRequest, responses::ReadIssuerCrlResponse};
+        use crate::client::Client;
+        use crate::error::ClientError;
+
+        pub async fn read(
+            client: &impl Client,
+            mount: &str,
+            issuer: &str,
+        ) -> Result<ReadIssuerCrlResponse, ClientError> {
+            let endpoint = ReadIssuerCrlRequest::builder()
+                .mount(mount)
+                .issuer(issuer)
+                .build()
+                .unwrap();
+            api::exec_with_result(client, endpoint).await
+        }
     }
 }

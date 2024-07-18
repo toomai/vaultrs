@@ -1,8 +1,9 @@
 use super::responses::{
     GenerateCertificateResponse, GenerateIntermediateResponse, GenerateRootResponse,
     ListCertificatesResponse, ListIssuersResponse, ListRolesResponse, ReadCRLConfigResponse,
-    ReadCertificateResponse, ReadRoleResponse, ReadURLsResponse, RevokeCertificateResponse,
-    RotateCRLsResponse, SignCertificateResponse, SignIntermediateResponse, SignSelfIssuedResponse,
+    ReadCertificateResponse, ReadIssuerCrlResponse, ReadRoleResponse, ReadURLsResponse,
+    RevokeCertificateResponse, RotateCRLsResponse, SignCertificateResponse,
+    SignIntermediateResponse, SignSelfIssuedResponse,
 };
 use rustify_derive::Endpoint;
 
@@ -623,4 +624,25 @@ pub struct TidyRequest {
 pub struct ListIssuersRequest {
     #[endpoint(skip)]
     pub mount: String,
+}
+
+/// ## Read Issuer CRL
+/// This endpoint returns a CRL for an issuer
+///
+/// * Path: {self.mount}/issuer/{self.issuer}/crl
+/// * Method: GET
+/// * Response: [ReadIssuerCrlResponse]
+/// * Reference: <https://developer.hashicorp.com/vault/api-docs/secret/pki#read-issuer-crl>
+#[derive(Builder, Debug, Default, Endpoint)]
+#[endpoint(
+    path = "{self.mount}/issuer/{self.issuer}/crl",
+    method = "GET",
+    response = "ReadIssuerCrlResponse",
+    builder = "true"
+)]
+#[builder(setter(into, strip_option), default)]
+pub struct ReadIssuerCrlRequest {
+    #[endpoint(skip)]
+    pub mount: String,
+    pub issuer: String,
 }
