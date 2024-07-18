@@ -1,8 +1,8 @@
 use super::responses::{
     GenerateCertificateResponse, GenerateIntermediateResponse, GenerateRootResponse,
-    ListCertificatesResponse, ListRolesResponse, ReadCRLConfigResponse, ReadCertificateResponse,
-    ReadRoleResponse, ReadURLsResponse, RevokeCertificateResponse, RotateCRLsResponse,
-    SignCertificateResponse, SignIntermediateResponse, SignSelfIssuedResponse,
+    ListCertificatesResponse, ListIssuersResponse, ListRolesResponse, ReadCRLConfigResponse,
+    ReadCertificateResponse, ReadRoleResponse, ReadURLsResponse, RevokeCertificateResponse,
+    RotateCRLsResponse, SignCertificateResponse, SignIntermediateResponse, SignSelfIssuedResponse,
 };
 use rustify_derive::Endpoint;
 
@@ -602,4 +602,25 @@ pub struct TidyRequest {
     pub tidy_cert_store: Option<bool>,
     pub tidy_revoked_certs: Option<bool>,
     pub safety_buffer: Option<String>,
+}
+
+/// ## List Issuers
+/// This endpoint returns a list of the current issuers
+/// only.
+///
+/// * Path: {self.mount}/issuers
+/// * Method: LIST
+/// * Response: [ListIssuersResponse]
+/// * Reference: <https://developer.hashicorp.com/vault/api-docs/secret/pki#list-issuers>
+#[derive(Builder, Debug, Default, Endpoint)]
+#[endpoint(
+    path = "{self.mount}/issuers",
+    method = "LIST",
+    response = "ListIssuersResponse",
+    builder = "true"
+)]
+#[builder(setter(into, strip_option), default)]
+pub struct ListIssuersRequest {
+    #[endpoint(skip)]
+    pub mount: String,
 }

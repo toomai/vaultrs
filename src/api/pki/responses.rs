@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 /// Response from executing
@@ -156,4 +158,22 @@ pub struct SignIntermediateResponse {
 pub struct SignSelfIssuedResponse {
     pub certificate: String,
     pub issuing_ca: String,
+}
+
+/// Response from executing
+/// [ListIssuersRequest][crate::api::pki::requests::ListIssuersRequest]
+#[derive(Deserialize, Debug, Serialize)]
+pub struct ListIssuersResponse {
+    pub keys: Vec<String>,
+    pub key_info: HashMap<String, Issuer>,
+}
+
+/// Response from executing
+/// [ListIssuersRequest][crate::api::kv2::requests::ListIssuersRequest]
+#[derive(Deserialize, Debug, Serialize)]
+pub struct Issuer {
+    pub issuer_name: Option<String>,
+    pub is_default: bool,
+    pub key_id: Option<String>,
+    pub serial_number: String,
 }

@@ -407,3 +407,19 @@ pub mod role {
         api::exec_with_empty(client, endpoint).await
     }
 }
+pub mod issuer {
+    use crate::api;
+    use crate::api::pki::{
+        requests::ListIssuersRequest,
+        responses::ListIssuersResponse,
+    };
+    use crate::client::Client;
+    use crate::error::ClientError;
+    /// Lists all roles
+    ///
+    /// See [ListIssuersRequest]
+    pub async fn list(client: &impl Client, mount: &str) -> Result<ListIssuersResponse, ClientError> {
+        let endpoint = ListIssuersRequest::builder().mount(mount).build().unwrap();
+        api::exec_with_result(client, endpoint).await
+    }
+}

@@ -195,9 +195,21 @@ impl MiddleWare for EndpointMiddleware {
         if self.strict_http && req.method() == "LIST" {
             info!("Middleware: switching LIST verb to ?list=true query parameter.");
             *req.method_mut() = http::Method::GET;
-            let path_and_query = http::uri::PathAndQuery::from_str(format!("{}?{}{}", req.uri().path(), "list=true&", req.uri().query().unwrap_or_else(||"")).as_str()).unwrap();
-            // Not a big fan of cloning http::uri here 
-            let new_uri = http::uri::Builder::from(req.uri().clone()).path_and_query(path_and_query).build().unwrap();
+            let path_and_query = http::uri::PathAndQuery::from_str(
+                format!(
+                    "{}?{}{}",
+                    req.uri().path(),
+                    "list=true&",
+                    req.uri().query().unwrap_or_else(|| "")
+                )
+                .as_str(),
+            )
+            .unwrap();
+            // Not a big fan of cloning http::uri here
+            let new_uri = http::uri::Builder::from(req.uri().clone())
+                .path_and_query(path_and_query)
+                .build()
+                .unwrap();
             *req.uri_mut() = new_uri;
         }
         Ok(())
