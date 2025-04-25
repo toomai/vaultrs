@@ -1,85 +1,79 @@
-#[macro_use]
-extern crate tracing;
-
-mod common;
-
-use common::{VaultServer, VaultServerHelper};
-use test_log::test;
+use tracing::debug;
 use vaultrs::client::Client;
+use vaultrs::sys::mount;
 use vaultrs::{api::ssh::requests::SetRoleRequest, error::ClientError};
 
-#[test]
-fn test() {
-    let test = common::new_test();
-    test.run(|instance| async move {
-        let server: VaultServer = instance.server();
-        let client = server.client();
-        let endpoint = setup(&server, &client).await.unwrap();
+use crate::common::Test;
 
-        // Test roles
-        crate::role::test_set(&client, &endpoint).await;
-        crate::role::test_read(&client, &endpoint).await;
-        crate::role::test_list(&client, &endpoint).await;
+#[tokio::test]
+async fn test() {
+    let test = Test::builder().await;
+    let client = test.client();
+    let endpoint = setup(client).await.unwrap();
 
-        // Test keys
-        crate::key::test_set(&client, &endpoint).await;
-        crate::key::test_delete(&client, &endpoint).await;
+    // Test roles
+    role::test_set(client, &endpoint).await;
+    role::test_read(client, &endpoint).await;
+    role::test_list(client, &endpoint).await;
 
-        // Test zero addresses
-        crate::zero::test_set(&client, &endpoint).await;
-        crate::zero::test_list(&client, &endpoint).await;
-        crate::zero::test_delete(&client, &endpoint).await;
+    // Test keys
+    key::test_set(client, &endpoint).await;
+    key::test_delete(client, &endpoint).await;
 
-        // Test CA
-        crate::ca::test_submit(&client, &endpoint).await;
-        crate::ca::test_read(&client, &endpoint).await;
-        crate::ca::test_delete(&client, &endpoint).await;
-        crate::ca::test_generate(&client, &endpoint).await;
-        crate::ca::test_sign(&client, &endpoint).await;
+    // Test zero addresses
+    zero::test_set(client, &endpoint).await;
+    zero::test_list(client, &endpoint).await;
+    zero::test_delete(client, &endpoint).await;
 
-        // Test generate
-        test_generate_dyn(&client, &endpoint).await;
-        let key = test_generate_otp(&client, &endpoint).await;
-        test_verify_otp(&client, &endpoint, key).await;
+    // Test CA
+    ca::test_submit(client, &endpoint).await;
+    ca::test_read(client, &endpoint).await;
+    ca::test_delete(client, &endpoint).await;
+    ca::test_generate(client, &endpoint).await;
+    ca::test_sign(client, &endpoint).await;
 
-        crate::role::test_delete(&client, &endpoint).await;
-    });
+    // Test generate
+    test_generate_dyn(client, &endpoint).await;
+    let key = test_generate_otp(client, &endpoint).await;
+    test_verify_otp(client, &endpoint, key).await;
+
+    role::test_delete(client, &endpoint).await;
 }
 
 pub async fn test_generate_dyn(client: &impl Client, endpoint: &SSHEndpoint) {
-    let res = vaultrs::ssh::generate(
+    let err = vaultrs::ssh::generate(
         client,
         endpoint.path.as_str(),
         endpoint.dyn_role.as_str(),
         "192.168.1.1",
         Some("admin".to_string()),
     )
-    .await;
+    .await
+    .unwrap_err();
 
     // This will fail since we don't have a valid SSH server at the configured IP
-    assert!(res.is_err());
-    if let ClientError::APIError { code, errors: _ } = res.unwrap_err() {
+    if let ClientError::APIError { code, errors: _ } = err {
         assert_eq!(code, 500);
     }
 }
 
 pub async fn test_generate_otp(client: &impl Client, endpoint: &SSHEndpoint) -> String {
-    let res = vaultrs::ssh::generate(
+    vaultrs::ssh::generate(
         client,
         endpoint.path.as_str(),
         endpoint.otp_role.as_str(),
         "192.168.1.1",
         Some("admin".to_string()),
     )
-    .await;
-
-    assert!(res.is_ok());
-    res.unwrap().key
+    .await
+    .unwrap()
+    .key
 }
 
 pub async fn test_verify_otp(client: &impl Client, endpoint: &SSHEndpoint, otp: String) {
-    let res = vaultrs::ssh::verify_otp(client, endpoint.path.as_str(), otp.as_str()).await;
-    assert!(res.is_ok());
+    vaultrs::ssh::verify_otp(client, endpoint.path.as_str(), otp.as_str())
+        .await
+        .unwrap();
 }
 
 pub mod ca {
@@ -88,44 +82,41 @@ pub mod ca {
     use vaultrs::ssh::ca;
 
     pub async fn test_delete(client: &impl Client, endpoint: &SSHEndpoint) {
-        let res = ca::delete(client, endpoint.path.as_str()).await;
-        assert!(res.is_ok());
+        ca::delete(client, endpoint.path.as_str()).await.unwrap();
     }
 
     pub async fn test_generate(client: &impl Client, endpoint: &SSHEndpoint) {
-        let res = ca::generate(client, endpoint.path.as_str()).await;
-        assert!(res.is_ok());
+        ca::generate(client, endpoint.path.as_str()).await.unwrap();
     }
 
     pub async fn test_read(client: &impl Client, endpoint: &SSHEndpoint) {
-        let res = ca::read(client, endpoint.path.as_str()).await;
-        assert!(res.is_ok());
+        ca::read(client, endpoint.path.as_str()).await.unwrap();
     }
 
     pub async fn test_sign(client: &impl Client, endpoint: &SSHEndpoint) {
         let public_key = fs::read_to_string("tests/files/id_rsa.pub").unwrap();
-        let res = ca::sign(
+        ca::sign(
             client,
             endpoint.path.as_str(),
             endpoint.role.as_str(),
             public_key.as_str(),
             None,
         )
-        .await;
-        assert!(res.is_ok());
+        .await
+        .unwrap();
     }
 
     pub async fn test_submit(client: &impl Client, endpoint: &SSHEndpoint) {
         let private_key = fs::read_to_string("tests/files/id_rsa").unwrap();
         let public_key = fs::read_to_string("tests/files/id_rsa.pub").unwrap();
-        let res = ca::set(
+        ca::set(
             client,
             endpoint.path.as_str(),
             private_key.as_str(),
             public_key.as_str(),
         )
-        .await;
-        assert!(res.is_ok());
+        .await
+        .unwrap();
     }
 }
 
@@ -136,19 +127,20 @@ pub mod key {
 
     pub async fn test_set(client: &impl Client, endpoint: &SSHEndpoint) {
         let key = fs::read_to_string("tests/files/id_rsa").unwrap();
-        let res = key::set(
+        key::set(
             client,
             endpoint.path.as_str(),
             endpoint.role.as_str(),
             key.as_str(),
         )
-        .await;
-        assert!(res.is_ok());
+        .await
+        .unwrap();
     }
 
     pub async fn test_delete(client: &impl Client, endpoint: &SSHEndpoint) {
-        let res = key::delete(client, endpoint.path.as_str(), endpoint.role.as_str()).await;
-        assert!(res.is_ok());
+        key::delete(client, endpoint.path.as_str(), endpoint.role.as_str())
+            .await
+            .unwrap();
     }
 }
 
@@ -157,22 +149,23 @@ mod role {
     use vaultrs::{api::ssh::requests::SetRoleRequest, ssh::role};
 
     pub async fn test_delete(client: &impl Client, endpoint: &SSHEndpoint) {
-        let res = role::delete(client, endpoint.path.as_str(), endpoint.role.as_str()).await;
-        assert!(res.is_ok());
+        role::delete(client, endpoint.path.as_str(), endpoint.role.as_str())
+            .await
+            .unwrap();
     }
 
     pub async fn test_list(client: &impl Client, endpoint: &SSHEndpoint) {
-        let res = role::list(client, endpoint.path.as_str()).await;
-        assert!(res.is_ok());
+        role::list(client, endpoint.path.as_str()).await.unwrap();
     }
 
     pub async fn test_read(client: &impl Client, endpoint: &SSHEndpoint) {
-        let res = role::read(client, endpoint.path.as_str(), endpoint.role.as_str()).await;
-        assert!(res.is_ok());
+        role::read(client, endpoint.path.as_str(), endpoint.role.as_str())
+            .await
+            .unwrap();
     }
 
     pub async fn test_set(client: &impl Client, endpoint: &SSHEndpoint) {
-        let res = role::set(
+        role::set(
             client,
             endpoint.path.as_str(),
             endpoint.role.as_str(),
@@ -183,8 +176,8 @@ mod role {
                     .allow_user_certificates(true),
             ),
         )
-        .await;
-        assert!(res.is_ok());
+        .await
+        .unwrap();
     }
 }
 
@@ -193,18 +186,17 @@ pub mod zero {
     use vaultrs::ssh::zero;
 
     pub async fn test_set(client: &impl Client, endpoint: &SSHEndpoint) {
-        let res = zero::set(client, endpoint.path.as_str(), vec![endpoint.role.clone()]).await;
-        assert!(res.is_ok());
+        zero::set(client, endpoint.path.as_str(), vec![endpoint.role.clone()])
+            .await
+            .unwrap();
     }
 
     pub async fn test_list(client: &impl Client, endpoint: &SSHEndpoint) {
-        let res = zero::list(client, endpoint.path.as_str()).await;
-        assert!(res.is_ok());
+        zero::list(client, endpoint.path.as_str()).await.unwrap();
     }
 
     pub async fn test_delete(client: &impl Client, endpoint: &SSHEndpoint) {
-        let res = zero::delete(client, endpoint.path.as_str()).await;
-        assert!(res.is_ok());
+        zero::delete(client, endpoint.path.as_str()).await.unwrap();
     }
 }
 
@@ -216,7 +208,7 @@ pub struct SSHEndpoint {
     pub otp_role: String,
 }
 
-async fn setup(server: &VaultServer, client: &impl Client) -> Result<SSHEndpoint, ClientError> {
+async fn setup(client: &impl Client) -> Result<SSHEndpoint, ClientError> {
     debug!("setting up SSH auth engine");
 
     let path = "ssh_test";
@@ -225,8 +217,7 @@ async fn setup(server: &VaultServer, client: &impl Client) -> Result<SSHEndpoint
     let otp_role = "test_otp";
 
     // Mount the SSH auth engine
-    server.mount_secret(client, path, "ssh").await?;
-
+    mount::enable(client, path, "ssh", None).await.unwrap();
     // Create key
     let key = std::fs::read_to_string("tests/files/id_rsa").unwrap();
     vaultrs::ssh::key::set(client, path, role, key.as_str()).await?;

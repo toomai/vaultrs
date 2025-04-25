@@ -119,7 +119,7 @@ pub mod auth {
 
     use crate::api;
     use crate::api::sys::requests::{
-        EnableAuthRequest, EnableAuthRequestBuilder, ListAuthsRequest,
+        DisableAuthRequest, EnableAuthRequest, EnableAuthRequestBuilder, ListAuthsRequest,
     };
     use crate::api::sys::responses::AuthResponse;
     use crate::client::Client;
@@ -144,6 +144,17 @@ pub mod auth {
         api::exec_with_empty(client, endpoint).await
     }
 
+    /// Disables the auth method at the given auth path.
+    ///
+    /// `sudo` required - This endpoint requires `sudo` capability in
+    ///  addition to any path-specific capabilities.
+    ///
+    /// See [DisableAuthRequest]
+    pub async fn disable(client: &impl Client, path: &str) -> Result<(), ClientError> {
+        let endpoint = DisableAuthRequest::builder().path(path).build().unwrap();
+        api::exec_with_empty(client, endpoint).await
+    }
+
     /// Lists all mounted auth engines
     ///
     /// See [ListAuthsRequest]
@@ -158,9 +169,10 @@ pub mod mount {
 
     use crate::api;
     use crate::api::sys::requests::{
-        EnableEngineRequest, EnableEngineRequestBuilder, ListMountsRequest,
+        DisableEngineRequest, EnableEngineRequest, EnableEngineRequestBuilder,
+        GetConfigurationOfTheSecretEngineRequest, ListMountsRequest,
     };
-    use crate::api::sys::responses::MountResponse;
+    use crate::api::sys::responses::{GetConfigurationOfTheSecretEngineResponse, MountResponse};
     use crate::client::Client;
     use crate::error::ClientError;
 
@@ -183,11 +195,77 @@ pub mod mount {
         api::exec_with_empty(client, endpoint).await
     }
 
+    /// Disable a secret engine at the given path
+    ///
+    /// See [DisableEngineRequest]
+    #[instrument(skip(client), err)]
+    pub async fn disable(client: &impl Client, path: &str) -> Result<(), ClientError> {
+        let endpoint = DisableEngineRequest::builder().path(path).build().unwrap();
+        api::exec_with_empty(client, endpoint).await
+    }
+
+    /// This endpoint returns the configuration of a specific secret engine.
+    ///
+    /// See [GetConfigurationOfTheSecretEngineRequest]
+    #[instrument(skip(client), err)]
+    pub async fn get_configuration_of_a_secret_engine(
+        client: &impl Client,
+        path: &str,
+    ) -> Result<GetConfigurationOfTheSecretEngineResponse, ClientError> {
+        let endpoint = GetConfigurationOfTheSecretEngineRequest::builder()
+            .path(path)
+            .build()
+            .unwrap();
+        api::exec_with_result(client, endpoint).await
+    }
+
     /// Lists all mounted secret engines
     ///
     /// See [ListMountsRequest]
     pub async fn list(client: &impl Client) -> Result<HashMap<String, MountResponse>, ClientError> {
         let endpoint = ListMountsRequest::builder().build().unwrap();
+        api::exec_with_result(client, endpoint).await
+    }
+}
+
+pub mod remount {
+    use crate::{
+        api::{
+            self,
+            sys::{
+                requests::{RemountRequest, RemountStatusRequest},
+                responses::{RemountResponse, RemountStatusResponse},
+            },
+        },
+        client::Client,
+        error::ClientError,
+    };
+
+    /// This endpoint moves an already-mounted backend to a new mount point.
+    ///
+    /// See [RemountRequest]
+    pub async fn remount(
+        client: &impl Client,
+        from: &str,
+        to: &str,
+    ) -> Result<RemountResponse, ClientError> {
+        let endpoint = RemountRequest::builder().from(from).to(to).build().unwrap();
+        dbg!(&endpoint);
+        api::exec_with_result(client, endpoint).await
+    }
+
+    /// This endpoint is used to monitor the status of a mount migration operation.
+    ///
+    /// See [RemountStatusRequest]
+    #[instrument(skip(client), err)]
+    pub async fn remount_status(
+        client: &impl Client,
+        migration_id: &str,
+    ) -> Result<RemountStatusResponse, ClientError> {
+        let endpoint = RemountStatusRequest::builder()
+            .migration_id(migration_id)
+            .build()
+            .unwrap();
         api::exec_with_result(client, endpoint).await
     }
 }

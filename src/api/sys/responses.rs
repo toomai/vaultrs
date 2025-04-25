@@ -28,6 +28,25 @@ pub struct MountConfigResponse {
 }
 
 /// Response from executing
+/// [GetConfigurationOfTheSecretEngineRequest][crate::api::sys::requests::GetConfigurationOfTheSecretEngineRequest ]
+#[derive(Deserialize, Debug, Serialize)]
+pub struct GetConfigurationOfTheSecretEngineResponse {
+    pub accessor: String,
+    pub config: MountConfigResponse,
+    pub description: String,
+    pub external_entropy_access: bool,
+    pub local: bool,
+    pub options: Option<HashMap<String, String>>,
+    pub plugin_version: Option<String>,
+    pub running_plugin_version: Option<String>,
+    pub running_sha256: Option<String>,
+    pub seal_wrap: bool,
+    #[serde(rename = "type")]
+    pub mount_type: String,
+    pub uuid: String,
+}
+
+/// Response from executing
 /// [ListAuthsRequest][crate::api::sys::requests::ListAuthsRequest]
 #[derive(Deserialize, Debug, Serialize)]
 pub struct AuthResponse {
@@ -51,6 +70,28 @@ pub struct AuthConfigResponse {
     pub force_no_cache: bool,
     pub max_lease_ttl: u64,
     pub token_type: String,
+}
+
+/// Response from executing
+/// [reMountRequest][crate::api::sys::requests::ReMountRequest]
+#[derive(Deserialize, Debug, Serialize)]
+pub struct RemountResponse {
+    pub migration_id: String,
+}
+
+/// Response from executing
+/// [reMountRequest][crate::api::sys::requests::ReMountRequest]
+#[derive(Deserialize, Debug, Serialize)]
+pub struct RemountStatusResponse {
+    pub migration_id: String,
+    pub migration_info: MigrationInfo,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct MigrationInfo {
+    pub source_mount: String,
+    pub target_mount: String,
+    pub status: String,
 }
 
 /// Response from executing
