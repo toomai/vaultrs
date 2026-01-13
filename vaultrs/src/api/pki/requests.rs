@@ -2,7 +2,7 @@ use super::responses::{
     CrossSignResponse, GenerateCertificateResponse, GenerateIntermediateCSRResponse,
     GenerateIntermediateResponse, GenerateRootResponse, ImportIssuerResponse,
     ListCertificatesResponse, ListIssuersResponse, ListRolesResponse, ReadCRLConfigResponse,
-    ReadCertificateResponse, ReadIssuerCertificateResponse, ReadRoleResponse, ReadURLsResponse,
+    ReadCertificateResponse, ReadIssuerCertificateResponse, ReadIssuerCrlResponse, ReadRoleResponse, ReadURLsResponse,
     RevokeCertificateResponse, RotateCRLsResponse, SetDefaultIssuerResponse,
     SignCertificateResponse, SignIntermediateIssuerResponse, SignIntermediateResponse,
     SignSelfIssuedResponse, UpdateIssuerResponse,
@@ -703,6 +703,27 @@ pub struct ReadIssuerCertificateRequest {
     #[endpoint(skip)]
     pub mount: String,
     #[endpoint(skip)]
+    pub issuer: String,
+}
+
+/// ## Read Issuer CRL
+/// This endpoint returns a CRL for an issuer
+///
+/// * Path: {self.mount}/issuer/{self.issuer}/crl
+/// * Method: GET
+/// * Response: [ReadIssuerCrlResponse]
+/// * Reference: <https://developer.hashicorp.com/vault/api-docs/secret/pki#read-issuer-crl>
+#[derive(Builder, Debug, Default, Endpoint)]
+#[endpoint(
+    path = "{self.mount}/issuer/{self.issuer}/crl",
+    method = "GET",
+    response = "ReadIssuerCrlResponse",
+    builder = "true"
+)]
+#[builder(setter(into, strip_option), default)]
+pub struct ReadIssuerCrlRequest {
+    #[endpoint(skip)]
+    pub mount: String,
     pub issuer: String,
 }
 

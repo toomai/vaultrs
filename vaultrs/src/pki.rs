@@ -586,6 +586,25 @@ pub mod issuer {
             api::exec_with_result(client, endpoint).await
         }
     }
+        pub mod crl {
+        use crate::api;
+        use crate::api::pki::{requests::ReadIssuerCrlRequest, responses::ReadIssuerCrlResponse};
+        use crate::client::Client;
+        use crate::error::ClientError;
+
+        pub async fn read(
+            client: &impl Client,
+            mount: &str,
+            issuer: &str,
+        ) -> Result<ReadIssuerCrlResponse, ClientError> {
+            let endpoint = ReadIssuerCrlRequest::builder()
+                .mount(mount)
+                .issuer(issuer)
+                .build()
+                .unwrap();
+            api::exec_with_result(client, endpoint).await
+        }
+    }
 }
 
 pub mod role {

@@ -209,6 +209,13 @@ pub struct ReadIssuerCertificateResponse {
 }
 
 /// Response from executing
+/// [ReadCrlResponse][crate::api::kv2::requests::ReadIssuerCrl]
+#[derive(Deserialize, Debug, Serialize)]
+pub struct ReadIssuerCrlResponse {
+    pub crl: Option<String>,
+}
+
+/// Response from executing
 /// [SignIntermediateIssuerRequest][crate::api::pki::requests::SignIntermediateIssuerRequest]
 #[derive(Deserialize, Debug, Serialize)]
 pub struct SignIntermediateIssuerResponse {
