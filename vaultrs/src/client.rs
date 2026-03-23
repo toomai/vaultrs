@@ -141,6 +141,7 @@ impl VaultClient {
             version: version_str,
             wrap: None,
             namespace: settings.namespace.clone(),
+            strict_http: settings.strict_http,
         };
 
         if let Some(proxy_url) = &settings.proxy {
@@ -197,6 +198,8 @@ pub struct VaultClientSettings {
     pub namespace: Option<String>,
     #[builder(setter(custom), default)]
     pub proxy: Option<Url>,
+    #[builder(default = "false")]
+    pub strict_http: bool,
 }
 
 impl VaultClientSettingsBuilder {
